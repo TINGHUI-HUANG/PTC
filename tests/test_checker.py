@@ -163,6 +163,24 @@ class Behaviour(unittest.TestCase):
                          "When you leave home: turn off the hallway light.")
         self.assertEqual(restate.never(fixed("A")[0]), [])
 
+    def test_an_off_rule_that_never_fires_is_not_a_reversal(self):
+        # Found in the Codex review: "when you leave home, if you are home" can never hold, because
+        # leaving makes "home" false. Before, the literal "off" hid the missing reversal.
+        unreachable = rule(["leave"], ["home"], "off")
+        reading = {"id": "R1", "label": "x", "rules": [rule(["arrive"], ["dark"], "on"), unreachable]}
+        self.assertEqual(simulator.dead_rules(reading), [unreachable])
+        self.assertEqual(simulator.reachable_actions(reading), {"on"})
+        self.assertTrue(selector.lacks_reversal(reading))
+        self.assertEqual(simulator.simulate(reading, LIB["S4"]), "on")
+        scenario, reason = selector.next_scenario([reading], SCENARIOS, ["S1"], "combined")
+        self.assertEqual((scenario["id"], reason), ("S4", "missing_reversal"))
+        self.assertEqual(restate.never(reading), [
+            "This part never runs, because its condition cannot hold just after its event: "
+            "When you leave home, if you are home: turn off the hallway light.",
+            "It never turns the light off."])
+        working = {"id": "R2", "label": "y", "rules": reading["rules"][:1] + [rule(["leave"], [], "off")]}
+        self.assertEqual((simulator.dead_rules(working), restate.never(working)), ([], []))
+
 
 if __name__ == "__main__":
     unittest.main()

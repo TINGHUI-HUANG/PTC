@@ -1,6 +1,7 @@
 """Plain-words restatement, built from the checked rule itself rather than from model prose."""
 from .schema import CONDITIONS, DEVICES, EVENTS
 from .selector import lacks_reversal
+from .simulator import dead_rules, reachable_actions
 
 
 def rule_text(rule):
@@ -16,8 +17,9 @@ def reading_text(reading):
 
 def never(reading):
     """What the rule will never do, stated outright (Lecture 12: state what did not happen)."""
-    actions = {rule["do"] for rule in reading["rules"]}
-    notes = []
+    actions = reachable_actions(reading)
+    notes = [f"This part never runs, because its condition cannot hold just after its event: {rule_text(rule)}"
+             for rule in dead_rules(reading)]
     if lacks_reversal(reading):
         notes.append("It never turns the light off.")
     if "on" not in actions:

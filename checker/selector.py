@@ -10,7 +10,7 @@ The interactive system uses "combined": divergence first, with the last question
 probe (the Lab 3 revision). "divergence", "boundary" and "random" exist for tools/compare.py.
 """
 from .schema import MAKES_TRUE
-from .simulator import simulate
+from .simulator import reachable_actions, simulate
 
 BUDGET = 3
 STRATEGIES = ("combined", "divergence", "boundary", "random")
@@ -28,8 +28,9 @@ def uncovered(reading):
 
 
 def lacks_reversal(reading):
-    """The reading turns the light on but never off: a missing reversal."""
-    actions = {rule["do"] for rule in reading["rules"]}
+    """The reading can turn the light on but never off: a missing reversal. An "off" rule that can
+    never fire counts as no "off" rule (found in the Codex review: "when you leave, if you are home")."""
+    actions = reachable_actions(reading)
     return "on" in actions and "off" not in actions
 
 
