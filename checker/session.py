@@ -36,6 +36,23 @@ def flip(outcome):
     return "off" if outcome == "on" else "on"
 
 
+def latest(steps):
+    """One step per scenario, in the order first asked, holding the most recent answer (highest 'rev').
+
+    On a tie the later copy wins: a step held at a repair card carries the repair choice, while the
+    same step in the restored history does not yet have it.
+    """
+    order, best = [], {}
+    for step in steps:
+        scenario = step["scenario"]
+        if scenario not in best:
+            order.append(scenario)
+            best[scenario] = step
+        elif step["rev"] >= best[scenario]["rev"]:
+            best[scenario] = step
+    return [best[scenario] for scenario in order]
+
+
 class Session:
     def __init__(self, generated, scenarios, strategy="combined", budget=selector.BUDGET, logger=None, driver="browser"):
         self.id = uuid.uuid4().hex[:8]
@@ -53,6 +70,7 @@ class Session:
         self._undo = []
         self._replay = []  # later answers retained while a previous question is edited
         self._held_current = None
+        self._rev = 0  # numbers each answer the person gives, so the latest one wins after Back or Revisit
         self.stage = None
         self._start()
 
@@ -82,6 +100,8 @@ class Session:
 
     def _advance(self):
         asked = [step["scenario"] for step in self.steps]
+        while self._replay and self._replay[0]["scenario"] in asked:
+            self._replay.pop(0)  # a scenario is answered once; a second copy would also use up the budget
         if self._replay and self.remaining and len(asked) < self.budget:
             preserved = self._replay.pop(0)
             scenario = self.library[preserved["scenario"]]
@@ -110,22 +130,21 @@ class Session:
         """Return to the previous step while retaining answers after that point."""
         if not self._undo or self.stage in ("saved", "edit"):
             raise ValueError("there is no previous step")
-        known = copy.deepcopy(self.steps)
-        if self._held_current:
-            known = [step for step in known if step["scenario"] != self._held_current["scenario"]]
-            known.append(copy.deepcopy(self._held_current))
-        known.extend(copy.deepcopy(self._replay))
+        held = [self._held_current] if self._held_current else []
+        known = copy.deepcopy(latest(self.steps + held + self._replay))
         previous = self._undo.pop()
         for name, value in previous.items():
             setattr(self, name, value)
+        # The snapshot's own held answer and replay queue can be older than answers given since,
+        # so both are rebuilt from the latest answers instead of being restored.
+        current = None
         if self.stage == "question" and self.pending:
-            target = self.pending["scenario"]["id"]
-            matching = next((i for i, step in enumerate(known) if step["scenario"] == target), None)
-            if matching is not None:
-                self._held_current = known[matching]
-                self._replay = known[matching + 1:]
-        elif self.stage == "repair" and known:
-            self._held_current = known[-1]
+            current = self.pending["scenario"]["id"]
+        elif self.stage == "repair" and self.steps:
+            current = self.steps[-1]["scenario"]  # the step this repair card belongs to
+        asked = {step["scenario"] for step in self.steps}
+        self._held_current = next((step for step in known if step["scenario"] == current), None)
+        self._replay = [step for step in known if step["scenario"] not in asked and step["scenario"] != current]
         self.log("back", stage=self.stage)
 
     def revisit(self, scenario_id):
@@ -156,7 +175,10 @@ class Session:
         scenario, outcomes = self.pending["scenario"], self.pending["outcomes"]
         step = {"scenario": scenario["id"], "reason": self.pending["reason"], "outcomes": outcomes, "answer": reply}
         if _restored is not None:
-            step["restored"] = True
+            step.update(restored=True, rev=_restored["rev"])  # a replayed answer keeps its age
+        else:
+            self._rev += 1
+            step["rev"] = self._rev
         self.steps.append(step)
         if reply == "not_sure":
             step.update(kept=ids(self.remaining), dropped=[])
@@ -252,7 +274,7 @@ class Session:
 
     def _situations(self, reading):
         """Each library scenario with the rule's outcome and how it compares with the person's answer."""
-        answered = {step["scenario"]: step for step in self.steps}
+        answered = {step["scenario"]: step for step in latest(self.steps)}
         rows = []
         for s in self.scenarios:
             outcome, step = simulator.simulate(reading, s), answered.get(s["id"])

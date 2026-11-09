@@ -1,15 +1,19 @@
 """Tests for one request's flow: questions, repair, restatement, saving and the initiative rule."""
 import json
+import random
 import unittest
 from pathlib import Path
 
 from checker import readings
-from checker.session import Session
+from checker.session import ANSWERS, Session, flip
 
 ROOT = Path(__file__).resolve().parent.parent
 SCENARIOS = json.loads((ROOT / "data" / "scenarios.json").read_text(encoding="utf-8"))["scenarios"]
+LIBRARY = {s["id"]: s for s in SCENARIOS}
 A = "When I arrive home after sunset, turn on the hallway light, and turn it off when I leave."
 B = "Turn on the hallway light when I'm home after dark."
+C = "Turn on the hallway light as soon as I get home after dark."
+E = "When it gets dark, turn on the hallway light."
 OFF_RULE = "When you leave home: turn off the hallway light."
 
 
@@ -17,6 +21,11 @@ def start(text, **options):
     events = []
     session = Session(readings.generate(text, mode="fixed"), SCENARIOS, logger=events.append, **options)
     return session, events
+
+
+def recorded(text):
+    """A session on Gemini's recorded readings of an example request."""
+    return Session(readings.generate(text, mode="recorded"), SCENARIOS)
 
 
 class Flow(unittest.TestCase):
@@ -192,6 +201,94 @@ class Flow(unittest.TestCase):
             s.answer("maybe")
         with self.assertRaises(ValueError):
             s.decide("save")
+
+
+class AnswerHistory(unittest.TestCase):
+    """Back and Revisit keep later answers, but never an answer the person has since changed."""
+
+    def test_changed_answer_is_not_replaced_by_the_older_one(self):
+        # The sequence reported in the Codex review (7 Nov 2026), on the recorded reading of request C.
+        s = recorded(C)
+        s.answer("yes")            # S1: on at 18:00 when already home
+        s.choose_repair("add")
+        s.answer("yes")            # S4: off when leaving
+        s.choose_repair("add")
+        s.revisit("S1")
+        s.answer("yes")
+        s.choose_repair("add")     # S4 is replayed with its repair
+        s.back()
+        s.back()                   # the S4 question again
+        s.answer("no")             # now the light should stay on
+        s.back()
+        s.back()
+        s.back()                   # the S1 question again
+        s.answer("yes")
+        s.choose_repair("add")     # S4 is replayed: it must be the No
+        self.assertEqual([(x["scenario"], x["answer"]) for x in s.steps], [("S1", "yes"), ("S4", "no")])
+        card = s.view()["card"]
+        self.assertNotIn(OFF_RULE, card["rules"])
+        s4 = next(row for row in card["situations"] if row["id"] == "S4")
+        self.assertEqual((s4["outcome"], s4["checked"]), ("on", "matches your answer"))
+
+    def test_random_back_and_revisit_keep_only_the_latest_answers(self):
+        for text in (B, C, E):
+            for seed in range(200):
+                with self.subTest(request=text, seed=seed):
+                    self.walk(recorded(text), random.Random(seed))
+
+    def walk(self, s, rng):
+        answer_of, choice_of = {}, {}  # the person's latest answer and repair choice per scenario
+        for _ in range(30):
+            moves = []
+            if s.stage == "question":
+                moves += ["yes", "no", "not_sure"]
+            elif s.stage == "repair":
+                moves += ["add", "dont_add"]
+            elif s.stage in ("confirm", "choose"):
+                moves += [("revisit", step["scenario"]) for step in s.steps]
+            if s.view()["can_back"]:
+                moves.append("back")
+            if not moves:
+                return
+            move = rng.choice(moves)
+            if move == "back":
+                s.back()
+            elif isinstance(move, tuple):
+                s.revisit(move[1])
+            elif move in ("add", "dont_add"):
+                choice_of[s.steps[-1]["scenario"]] = move
+                s.choose_repair(move)
+            else:
+                scenario = s.pending["scenario"]["id"]
+                answer_of[scenario] = move
+                choice_of.pop(scenario, None)  # a new answer needs a new repair choice
+                s.answer(move)
+            self.check(s, answer_of, choice_of)
+
+    def check(self, s, answer_of, choice_of):
+        asked = [step["scenario"] for step in s.steps]
+        self.assertEqual(len(asked), len(set(asked)), asked)
+        self.assertLessEqual(len(asked), s.budget)
+        for step in s.steps:
+            self.assertEqual(step["answer"], answer_of[step["scenario"]])
+            if "added" in step:
+                self.assertEqual(choice_of.get(step["scenario"]), "add")
+            if "declined" in step:
+                self.assertEqual(choice_of.get(step["scenario"]), "dont_add")
+        view = s.view()
+        for kept in view["retained"]:
+            self.assertNotIn(kept["scenario"], asked)
+            self.assertEqual(kept["answer"], ANSWERS[answer_of[kept["scenario"]]])
+        if s.stage == "confirm":
+            for row in view["card"]["situations"]:
+                said = answer_of[row["id"]] if row["id"] in asked else None
+                if said is None:
+                    self.assertEqual(row["checked"], "not asked")
+                elif said == "not_sure":
+                    self.assertEqual(row["checked"], "you were not sure")
+                else:
+                    yes = LIBRARY[row["id"]]["yes"]
+                    self.assertEqual(row["match"], row["outcome"] == (yes if said == "yes" else flip(yes)))
 
 
 if __name__ == "__main__":
