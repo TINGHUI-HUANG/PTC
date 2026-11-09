@@ -1,0 +1,24 @@
+{
+  "note": "Contrasting preferences: intended behaviours that differ from the student's own (data/requests.json) for the same sentences. Fixed on 9 Nov 2026 before tools/compare.py was run on them, and not used to change the selector, the scenarios or the repairs. Each value is how this person would answer that scenario's question (data/scenarios.json): 'on' or 'off' at the end of the moment.",
+  "fixed": "2026-11-09",
+  "targets": [
+    {
+      "id": "C-arrival-only",
+      "request": "C",
+      "person": "wants the light to come on only when they arrive after dark, and to go off when they leave",
+      "intended": {"S1": "off", "S2": "on", "S3": "off", "S4": "off", "S5": "off"}
+    },
+    {
+      "id": "D-left-on",
+      "request": "D",
+      "person": "wants the light on whenever they are home after dark, and left on when they go out",
+      "intended": {"S1": "on", "S2": "on", "S3": "off", "S4": "on", "S5": "off"}
+    },
+    {
+      "id": "E-whenever-dark",
+      "request": "E",
+      "person": "wants the light on whenever it is dark, home or not, and never switched off by the rule",
+      "intended": {"S1": "on", "S2": "on", "S3": "off", "S4": "on", "S5": "on"}
+    }
+  ]
+}
