@@ -1,12 +1,12 @@
 # Pre-save timing check for one-sentence home automations
 
-*README prose: 1189 words (code, commands and file names not counted).*
-Intelligent Interactive Systems, Assignment 2 (project Phase 2) · student 3189041 · submitted release `v1.0-a2`.
+*README prose: 1484 words (code, commands and file names not counted).*
+Intelligent Interactive Systems, Assignment 2 (project Phase 2) · student 3189041 · submitted release `v1.1-a2`.
 
 A person types one sentence, such as "Turn on the hallway light when I'm home after dark". Before saving, the
 system asks up to three yes/no questions about concrete moments where Gemini's readings of the sentence differ or
 where common rule bugs hide, proposes a missing rule when no reading fits an answer, and restates the rule,
-including what it never does. Nothing is saved without Save.
+including what it never does. No rule is saved without Save.
 
 ![System diagram](docs/system_diagram.png)
 
@@ -15,12 +15,12 @@ including what it never does. Nothing is saved without Save.
 | Part | Status |
 |---|---|
 | Web page: Describe / Check / Save flow; question, repair, review, decline, error and saved cards | Implemented |
-| Back and Revisit: return to an earlier step or reopen an answer, with later answers kept and replayed | Implemented |
-| Checker: reply and conflict checks, simulator, question choice (at most three), repairs, restatement, log | Implemented, 46 tests |
+| Back and Revisit: return to an earlier step or reopen an answer, with later answers kept and replayed; the latest answer wins | Implemented |
+| Checker: reply and conflict checks, parts that can never fire, simulator, question choice (at most three), repairs, restatement, log | Implemented, 50 tests |
 | Gemini readings, live with your own key | Implemented |
-| Gemini replies to the seven example requests, replayed without a key | Recorded 2 Nov 2026 (`gemini-3.5-flash`) |
+| Gemini replies to the seven example requests, replayed without a key | Recorded 2 Nov 2026 (`gemini-3.5-flash`); rechecked as sent 9 Nov |
 | Lab 3 hand-written readings for requests A and B | Simulated; a fallback only |
-| Offline comparison of question sources (`tools/compare.py`) | Implemented; pilot on my own intended behaviours |
+| Offline comparison of question sources (`tools/compare.py`) | Implemented; pilot on my own intended behaviours and three contrasting ones fixed beforehand |
 | Saving to Google Home or Home Assistant, sunset from location, a rule editor, more devices | Planned |
 | Phase 3 evaluation on published study tasks; a user study | Planned |
 
@@ -40,6 +40,7 @@ including what it never does. Nothing is saved without Save.
 py -3.11 app.py                  # or: python app.py   then open http://localhost:8000
 py -3.11 -m unittest             # all tests, no network
 py -3.11 tools/compare.py        # offline comparison of question sources
+py -3.11 tools/record_readings.py --recheck   # the prompt's criteria on the recorded replies; no key
 ```
 
 - Without a key, the example chips replay recorded Gemini replies; other sentences get a "no rule created" card.
@@ -67,13 +68,20 @@ Each commit message says what changed, why, and how it was checked.
 | Figures | Diagram and storyboards from code and real screens. Frames showed Yes and Save pre-focused (a default answer) and a decline claiming rules were drafted; both fixed. | Every frame looked at | [`f6f5197`](https://github.com/TINGHUI-HUANG/presave-timing-check/commit/f6f5197) [`b3819c3`](https://github.com/TINGHUI-HUANG/presave-timing-check/commit/b3819c3) |
 | My changes | I added Back and Revisit (later answers kept and replayed), rejection of rules that switch the light on and off at once, merging only of fully equivalent readings, retry-safe actions with session recovery, and a new Describe / Check / Save interface with an illustrated scene for each question. | 12 new tests; all 46 pass | [`96b8933`](https://github.com/TINGHUI-HUANG/presave-timing-check/commit/96b8933) |
 | Figures again | Storyboards recaptured for the new interface; storyboard 2 now shows Back. | Every frame looked at | [`fa6ba31`](https://github.com/TINGHUI-HUANG/presave-timing-check/commit/fa6ba31) |
+| Review and fixes (7–9 Nov) | At my request OpenAI Codex reviewed the project and reproduced four faults: after a changed answer, Back could revive the older one and call it a match; an "off" rule that can never fire passed as a reversal; C1 and C3 were judged after the checker had repaired the reply; "Try again" failed after a reload or a network error. Answers now carry versions and the latest wins; checks use what a rule can do; criteria judge the reply as sent; a retry keeps its card. | The review's sequence as a test; 600 random Back and Revisit walks fail 38 times on the old code, never now; browser checks; `--recheck` | [`7cb7297`](https://github.com/TINGHUI-HUANG/presave-timing-check/commit/7cb7297) [`3a40ec2`](https://github.com/TINGHUI-HUANG/presave-timing-check/commit/3a40ec2) [`446d0a1`](https://github.com/TINGHUI-HUANG/presave-timing-check/commit/446d0a1) [`ad8db24`](https://github.com/TINGHUI-HUANG/presave-timing-check/commit/ad8db24) |
+| Contrasting preferences | Three people who want something else from C, D and E, fixed before the run. The combined source exposed 3 of 4 deviations, missing arrival after dark once a plain sunset rule is kept, as probes look for conditions. Nothing was tuned in response. | `docs/comparison.md` | [`95b255e`](https://github.com/TINGHUI-HUANG/presave-timing-check/commit/95b255e) [`ae1d9ba`](https://github.com/TINGHUI-HUANG/presave-timing-check/commit/ae1d9ba) |
+| Figures | Probe reasons now describe the rules on screen; storyboard 3 shows a No that adds nothing; the diagram shows the log and the source order. | Every frame looked at | [`eea3f44`](https://github.com/TINGHUI-HUANG/presave-timing-check/commit/eea3f44) [`9b07005`](https://github.com/TINGHUI-HUANG/presave-timing-check/commit/9b07005) |
 
 ## AI assistance
 
 - **Claude Code** (Anthropic, Claude Opus 5.5, desktop app). I asked it to read the brief, my A1 review,
   and the Week 1–4 slides, and to plan and build A2 with me. I approved its plan after adding two
   conditions: my Gemini key stays out of everything it writes, and it writes me a run guide in Chinese. It wrote
-  the initial code, tests, prompt, figures, this README, and ran and clicked through the app.
+  the initial code, tests, prompt, figures, this README and the report draft, and ran and clicked through the
+  app. In a second round (9 Nov) it fixed the faults the Codex review found, including one in my own Back and
+  Revisit code (`7cb7297`), reran the checks and figures, and revised the report draft.
+- **OpenAI Codex** reviewed the project against the brief on 7 Nov 2026, at my request. It changed no files;
+  its findings and what was done about them are in the development record.
 - **Gemini 3.5 Flash** proposes the readings at run time. It never sees the intended behaviours, and its replies
   pass the checks before anything reaches the screen. Only the example sentences were sent to it.
 
@@ -87,7 +95,6 @@ What I decided or checked myself:
 - I created `.env` myself. I first pasted Gemini's sample code, key included, into `.env.example`, which Git
   tracks; Claude checked that no commit contained it, and I restored the template and created `.env`. Claude never
   wrote the key into a file or command.
-- I chose my GitHub name and Gmail address for the commits instead of the QQ address in my Git settings.
 - I wrote commit `96b8933` by hand, without AI tools: Back and Revisit, the conflict check, stricter merging,
   retry-safe actions and session recovery, the new interface and 12 tests. Claude Code reviewed it, ran the 46
   tests and the comparison (results unchanged), recaptured the storyboards and committed it at my request.
@@ -96,6 +103,9 @@ What I decided or checked myself:
   sunset rule before saving. My door-lock request was declined twice with no rule created. For C, I added both
   proposed rules and saved. My own sentence, "Switch on the hallway light whenever it is dark and I am in", went to
   the live model, which refused with HTTP 429 (free quota used up); the page said no rule was created.
+- After the Codex review I decided what to act on: the faults and the report's wording, plus three contrasting
+  preferences run on the existing recordings with no new model calls. I asked for changes that would only
+  pre-empt criticism to be dropped.
 
 ## Additional files
 
