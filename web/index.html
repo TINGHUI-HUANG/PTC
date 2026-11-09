@@ -220,19 +220,29 @@ async function init() {
   }
   $("#create").onclick = start;
   const session = sessionStorage.getItem("automation-session");
-  if (session) { try { view = await api(`/api/session?session=${encodeURIComponent(session)}`); render(); } catch (_) { sessionStorage.removeItem("automation-session"); } }
+  if (session) { try { view = await api(`/api/session?session=${encodeURIComponent(session)}`); $("#req").value = view.request; render(); } catch (_) { sessionStorage.removeItem("automation-session"); } }
   $("#req").addEventListener("keydown", (e) => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); start(); } });
 }
 
-async function start() {
-  const text = $("#req").value.trim();
+// again: the request to send once more from the "No rule created" card ("Try again"). The text box can
+// be empty then (the page was reloaded), and the card stays on screen until a new answer arrives.
+async function start(again) {
+  const text = (typeof again === "string" ? again : $("#req").value).trim();
   if (!text || busy) return;
-  busy = true; $("#create").disabled = true; $("#thread").innerHTML = "";
+  busy = true; $("#create").disabled = true;
+  const panel = typeof again === "string" ? $("#thread [data-test='error']") : null;
+  if (panel) panel.querySelectorAll("button").forEach((b) => (b.disabled = true));
+  const show = (html) => {
+    if (!panel) return status(html);
+    let line = panel.querySelector(".status");
+    if (!line) { line = document.createElement("div"); line.className = "status"; line.setAttribute("aria-live", "polite"); panel.append(line); }
+    line.innerHTML = html;
+  };
   const began = Date.now();
-  status('<span class="spin"></span>Reading your request…');
+  show('<span class="spin"></span>Reading your request…');
   timer = setInterval(() => {
     const s = Math.round((Date.now() - began) / 1000);
-    if (s >= 1) status(`<span class="spin"></span>Reading your request… ${s} s`);
+    if (s >= 1) show(`<span class="spin"></span>Reading your request… ${s} s`);
   }, 500);
   try {
     view = await api("/api/start", {request: text});
@@ -240,10 +250,19 @@ async function start() {
     pendingAction = null; sessionStorage.setItem("automation-session", view.session);
     render();
   } catch (error) {
-    status(esc(error.message));
+    if (!panel) { status(esc(error.message)); return; }
+    show("");
+    panel.querySelectorAll("button").forEach((b) => (b.disabled = false));
+    inlineError(panel, `We couldn't check your request again: ${error.message}. Try again, or edit your request.`);
   } finally {
     clearInterval(timer); busy = false; $("#create").disabled = false;
   }
+}
+
+function inlineError(panel, text) {
+  let message = panel.querySelector(".inline-error");
+  if (!message) { message = document.createElement("div"); message.className = "inline-error"; message.setAttribute("role", "alert"); panel.append(message); }
+  message.textContent = text;
 }
 
 async function act(path, body, button) {
@@ -265,9 +284,7 @@ async function act(path, body, button) {
       }
     } catch (_) { /* Keep the same action ID for a safe retry. */ }
     panel.querySelectorAll("button").forEach((b) => (b.disabled = false));
-    let message = panel.querySelector(".inline-error");
-    if (!message) { message = document.createElement("div"); message.className = "inline-error"; message.setAttribute("role", "alert"); panel.append(message); }
-    message.textContent = `We couldn't complete that step: ${error.message}. Please try again.`;
+    inlineError(panel, `We couldn't complete that step: ${error.message}. Please try again.`);
   } finally { busy = false; }
 }
 
@@ -414,7 +431,7 @@ function render() {
     wire(el, (v) => (v === "edit" ? null : ["/api/repair", {choice: v}]));
   } else if (c.kind === "confirm") {
     const rows = c.situations.map((s) => `<tr><td>${esc(s.label)}</td><td>light ${esc(s.outcome)}</td><td>${esc(s.checked)}</td></tr>`).join("");
-    el = card("confirm", `<div class="card-kicker">Step 03 / Review before saving</div><h2>Does this feel right?</h2><p class="small">Check the trigger, conditions and action. Select an event to revisit a related answer. Your other answers will be kept and checked again. Nothing is saved until you choose Save.</p>${ruleFlow(c.rule_parts)}${ruleBox(c.rules)}${neverBox(c.never)}
+    el = card("confirm", `<div class="card-kicker">Step 03 / Review before saving</div><h2>Does this feel right?</h2><p class="small">Check the trigger, conditions and action. Select an event to revisit a related answer. Your other answers will be kept and checked again. The rule is not saved until you choose Save.</p>${ruleFlow(c.rule_parts)}${ruleBox(c.rules)}${neverBox(c.never)}
       ${c.mismatches ? `<div class="notice" role="alert">This rule differs from ${c.mismatches} of your answers. Review the details below or edit your request.</div>` : ""}${c.confirmed.length ? `<div class="small">What you told me:</div><ul class="confirmed">${c.confirmed.map((x) => `<li>${esc(x)}</li>`).join("")}</ul>` : ""}
       <details class="more"><summary>See checked and unchecked situations</summary>
       <table><tr><th>Situation</th><th>Result</th><th>Checked with you?</th></tr>${rows}</table></details>
@@ -469,7 +486,7 @@ function wire(el, route) {
   el.querySelectorAll("button[data-choice]").forEach((b) => {
     b.onclick = () => {
       const target = route(b.dataset.choice);
-      if (target === "retry") return start();
+      if (target === "retry") return start(view.request);
       if (target === null) return b.dataset.choice === "edit" && view.card.kind !== "question" ? sendEdit(b) : editRequest();
       act(target[0], target[1], b);
     };
