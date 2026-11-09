@@ -31,13 +31,13 @@ STORIES = {
         ("s2_5.png", "Not sure; the gap is stated"),
         ("s2_6.png", "Back, Yes, Add: off rule added"),
     ]),
-    "storyboard_3": ("A decline, then one confident reading still checked", [
+    "storyboard_3": ("A decline, then a single model-proposed reading: probes ask, the answer decides", [
         ("s3_1.png", "Asks for a door lock: declined"),
         ("s3_2.png", "Edits; probe: dark at home"),
         ("s3_3.png", "Yes; offered a sunset rule"),
         ("s3_4.png", "Adds it; then a probe: leaving"),
-        ("s3_5.png", "Yes; offered the off rule"),
-        ("s3_6.png", "Adds it; reviews three rules"),
+        ("s3_5.png", "No; review: never turns it off"),
+        ("s3_6.png", "Saves the rule as answered"),
     ]),
 }
 

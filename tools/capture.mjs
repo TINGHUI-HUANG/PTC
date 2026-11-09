@@ -43,14 +43,15 @@ const STORIES = {
     { acts: [["choice", "question", "not_sure"]], frame: ["confirm"] },
     { acts: [["back"], ["choice", "question", "yes"], ["choice", "repair", "add"]], frame: ["confirm"] },
   ],
-  // F then C: an out-of-scope request is declined; one confident reading is still checked.
+  // F then C: an out-of-scope request is declined. C gets a single reading, which probes still check;
+  // the person keeps the light on when leaving, so nothing is added and the review says so.
   s3: [
     { acts: [["example", "F"], ["create"]], frame: ["request", "declined"] },
     { acts: [["choice", "declined", "edit"], ["example", "C"], ["create"]], frame: ["request", "question"] },
     { acts: [["choice", "question", "yes"]], frame: ["repair"] },
     { acts: [["choice", "repair", "add"]], frame: ["question"] },
-    { acts: [["choice", "question", "yes"]], frame: ["repair"] },
-    { acts: [["choice", "repair", "add"]], frame: ["confirm"] },
+    { acts: [["choice", "question", "no"]], frame: ["confirm"] },
+    { acts: [["choice", "confirm", "save"]], frame: ["saved"] },
   ],
 };
 
@@ -120,10 +121,10 @@ async function launch(width, height) {
 }
 
 async function diagram() {
-  const b = await launch(940, 1030);
+  const b = await launch(940, 1050);
   try {
     await b.navigate(pathToFileURL(join(ROOT, "docs", "system_diagram.svg")).href);
-    await b.shot(join(ROOT, "docs", "system_diagram.png"), { x: 0, y: 0, width: 940, height: 1030 });
+    await b.shot(join(ROOT, "docs", "system_diagram.png"), { x: 0, y: 0, width: 940, height: 1050 });
   } finally { await b.close(); }
 }
 

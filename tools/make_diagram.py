@@ -9,7 +9,7 @@ from pathlib import Path
 from xml.sax.saxutils import escape
 
 ROOT = Path(__file__).resolve().parent.parent
-W, H = 940, 1030
+W, H = 940, 1050
 P, C, D = (20, 220), (320, 320), (700, 220)          # x and width of the three columns
 STYLE = {
     "impl": 'fill="#e7f0ff" stroke="#2f5fb3" stroke-width="1.6"',
@@ -71,7 +71,8 @@ def build():
         badge="decides when to ask")
     box(C, 420, 66, "5  Apply the answer", "keep matching readings; Not sure keeps all")
     box(C, 510, 66, "6  Propose a missing rule", "repair template of the probe scenario")
-    box(C, 600, 66, "7  Restate and wait", "from the rule; Back/Revisit replay kept answers")
+    box(C, 600, 66, "7  Restate and wait", "from the rule; states what never happens",
+        note="Implemented · Back/Revisit keep the latest answers")
     box(C, 690, 66, "8  Save once", "once per session, even on a retried click")
 
     # Model and data column
@@ -79,7 +80,7 @@ def build():
     box(D, 136, 48, "Recorded replies", status="sim", note="Recorded · replayed, no key")
     box(D, 192, 48, "Lab 3 hand-written", status="sim", note="Simulated · requests A and B")
     box(D, 252, 66, "Scenario library S1–S5", "one moment each; sunset 18:00")
-    box(D, 420, 66, "Session log (JSONL)", "every step; who clicked")
+    box(D, 600, 66, "Session log (JSONL)", "answers, sources, outcomes", note="Implemented · who clicked")
     box(D, 690, 50, "Saved rules (local JSON)")
     box(D, 770, 50, "Home platform", status="plan", note="Planned · Google Home, Home Assistant")
 
@@ -106,14 +107,15 @@ def build():
     arrow([(cl, 532), (pr, 532)], "proposal", (gx, 525))
     arrow([(pr, 560), (cl, 560)], "choice", (gx, 590))
     arrow([(cr, 543), (cr + 26, 543), (cr + 26, 360), (cr, 360)])
-    arrow([(cr, 346), (cr + 40, 346), (cr + 40, 633), (cr, 633)], "nothing left", (cr + 46, 596), anchor="start")
-    text(cr + 46, 611, "to ask", "lab")
+    arrow([(cr, 346), (cr + 40, 346), (cr + 40, 633), (cr, 633)], "nothing left", (cr + 46, 562), anchor="start")
+    text(cr + 46, 577, "to ask", "lab")
 
     # Restate, save, log
     arrow([(cl, 633), (pr, 633)], "rule", (gx, 626))
     arrow([(pr, 655), (gx, 655), (gx, 723), (cl, 723)], "Save", (gx - 6, 692), anchor="end")
     arrow([(cl, 745), (pr, 745)], "saved", (gx, 768))
     arrow([(cr, 715), (dl, 715)], "rule", ((cr + dl) / 2, 708))
+    arrow([(cr, 652), (dl, 652)], "every step", ((cr + dl) / 2, 678))
     arrow([(cr, 745), (dl - 10, 745), (dl - 10, 795), (dl, 795)], dotted=True)
     arrow([(12, 640), (12, 75), (20, 75)], dotted=True)
     out.append('<text class="lab" x="8" y="400" transform="rotate(-90 8 400)" text-anchor="middle">'
@@ -122,8 +124,8 @@ def build():
     # Offline tools
     text(20, 852, "Offline tools (outside the interaction)", "h")
     for i, (title, detail, status) in enumerate([
-            ("record_readings.py", "live replies → recordings\n+ automatic criteria check", "impl"),
-            ("compare.py", "scripted person · 4 strategies\n· 1–3 questions (pilot)", "impl"),
+            ("record_readings.py", "live replies → recordings\n+ criteria, judged as sent", "impl"),
+            ("compare.py", "scripted person · 4 strategies\n· my targets + 3 contrasting", "impl"),
             ("Phase 3 evaluation", "published study tasks;\nuser study", "plan"),
             ("Not built", "sunset from location · rule\neditor · more devices", "plan")]):
         box((20 + 230 * i, 210), 862, 84, title, detail, status)
@@ -139,6 +141,8 @@ def build():
     text(728, y + 14, "model inference")
     text(20, 1020, "Steps 4–7 implement the initiative rule: ask while readings differ or a bug class applies; "
                    "then propose and wait.", "s")
+    text(20, 1040, "Reply source, in order: recorded reply → live Gemini call (needs a key) → Lab 3 hand-written "
+                   "(A, B); a failed live call is reported, never replaced.", "s")
 
 
 def main():
