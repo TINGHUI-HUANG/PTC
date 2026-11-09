@@ -102,6 +102,19 @@ class Schema(unittest.TestCase):
         self.assertEqual(len(result["notes"]), 1)
         self.assertEqual(result["readings"][0]["rules"][0], rule(["arrive"], ["dark"], "on"))
 
+    def test_raw_problems_judge_the_reply_as_sent(self):
+        # check() recovers from all of these, so it alone would let a prompt pass C1 that the model failed.
+        untidy = {"unsupported": "", "readings": [
+            {"rules": [{"when": ["arrive"], "device": "hallway_light", "do": "ON"}]}]}
+        self.assertEqual(schema.check(untidy)["problems"], [])
+        self.assertEqual(schema.raw_problems(untidy), [
+            "reading 1 has no label",
+            "reading 1, rule 1: 'if' is missing or has the wrong type",
+            "reading 1, rule 1: 'do' needed trimming, lower case or removal of repeats"])
+        tidy = {"unsupported": "", "readings": [{"label": "x", "rules": [rule(["arrive"], ["dark"], "on")]}]}
+        self.assertEqual(schema.raw_problems(tidy), [])
+        self.assertEqual(schema.raw_problems("not json"), ["the reply is not a JSON object"])
+
 
 class Behaviour(unittest.TestCase):
     def test_readings_with_identical_outcomes_are_merged(self):

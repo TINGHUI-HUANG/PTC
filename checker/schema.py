@@ -33,6 +33,46 @@ def _terms(value):
     return out
 
 
+def raw_problems(payload):
+    """What check() would have to fill in, normalise or reject, judged on the reply exactly as sent.
+
+    check() is lenient so that the app can still use a slightly untidy reply (a missing 'if' becomes
+    no condition, 'ON' becomes 'on'). A prompt is judged on what the model sent (docs/prompt_log.md, C1).
+    Extra readings are counted separately (C3)."""
+    if not isinstance(payload, dict):
+        return ["the reply is not a JSON object"]
+    problems = []
+    if not isinstance(payload.get("unsupported"), str):
+        problems.append("'unsupported' is missing or is not a string")
+    raw = payload.get("readings")
+    if not isinstance(raw, list):
+        return problems + ["'readings' is missing or is not a list"]
+    for n, item in enumerate(raw, 1):
+        if not isinstance(item, dict):
+            problems.append(f"reading {n} is not an object")
+            continue
+        if not isinstance(item.get("label"), str) or not item["label"].strip():
+            problems.append(f"reading {n} has no label")
+        if not isinstance(item.get("rules"), list) or not item["rules"]:
+            problems.append(f"reading {n} has no list of rules")
+            continue
+        for m, rule in enumerate(item["rules"], 1):
+            where = f"reading {n}, rule {m}"
+            if not isinstance(rule, dict):
+                problems.append(f"{where} is not an object")
+                continue
+            for key, kind in (("when", list), ("if", list), ("device", str), ("do", str)):
+                value = rule.get(key)
+                terms = value if isinstance(value, list) else [value]
+                if not isinstance(value, kind) or not all(isinstance(t, str) for t in terms):
+                    problems.append(f"{where}: '{key}' is missing or has the wrong type")
+                elif any(not t.strip() or t != t.strip().lower() for t in terms) or len(set(terms)) < len(terms):
+                    problems.append(f"{where}: '{key}' needed trimming, lower case or removal of repeats")
+            if rule.get("when") == []:
+                problems.append(f"{where} has no event")
+    return problems
+
+
 def check(payload):
     """Check a parsed model reply.
 

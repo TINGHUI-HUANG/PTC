@@ -5,6 +5,7 @@
   py -3.11 tools/record_readings.py                  record every example request
   py -3.11 tools/record_readings.py --only B,E       record some of them
   py -3.11 tools/record_readings.py --out data/stability_run.json   a second run, not replayed by the app
+  py -3.11 tools/record_readings.py --recheck        recheck the recorded replies; no key, no model call
 
 The key is never printed or saved. Each recording is appended to data/recorded_readings.json with
 what was sent, the raw reply and an automatic check against the prompt's success criteria.
@@ -20,7 +21,7 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(ROOT))
-from checker import readings, restate, simulator  # noqa: E402
+from checker import readings, restate, schema, simulator  # noqa: E402
 
 PROBE = "Turn on the hallway light when I arrive home."
 STORE = ROOT / "data" / "recorded_readings.json"
@@ -33,17 +34,68 @@ def load_json(path):
     return json.loads(path.read_text(encoding="utf-8"))
 
 
+def as_sent(text):
+    """The reply exactly as the model sent it: (what the checker would have to fix, readings sent)."""
+    try:
+        payload = json.loads(text)
+    except json.JSONDecodeError:
+        return ["the reply is not valid JSON"], 0
+    sent = payload.get("readings") if isinstance(payload, dict) else None
+    return schema.raw_problems(payload), len(sent) if isinstance(sent, list) else 0
+
+
 def criteria(spec, generated, scenarios):
-    """The success criteria a program can check (docs/prompt_log.md lists all of them)."""
-    result = {"C1 shape": not generated.problems and generated.error != "unusable"}
+    """The success criteria a program can check (docs/prompt_log.md lists all of them).
+
+    C1 and C3 judge the reply as sent, before the checker's lenient reading fills in or drops anything;
+    C4 compares the readings in all 24 states and events (simulator.state_cases)."""
+    problems, count = as_sent(generated.raw_text)
+    result = {"C1 shape as sent": not problems}
     if spec.get("expect", "in_scope") == "in_scope":
         result["C2 vocabulary"] = not generated.unsupported
-        result["C3 1-3 readings"] = 1 <= len(generated.readings) <= 3
-        merged = simulator.distinct(generated.readings, scenarios)[1] if generated.readings else []
-        result["C4 distinct"] = not merged
+        result["C3 1-3 readings as sent"] = 1 <= count <= schema.MAX_READINGS
+        if len(generated.readings) < 2:
+            result["C4 readings differ"] = "n/a (one reading)"
+        else:
+            result["C4 readings differ"] = not simulator.distinct(generated.readings, scenarios)[1]
     else:
         result["C5 declined"] = bool(generated.unsupported) and not generated.readings
     return result
+
+
+def verdict(check):
+    return ", ".join(f"{name} {'pass' if ok is True else 'FAIL' if ok is False else ok}" for name, ok in check.items())
+
+
+def separated_by_library(readings_, scenarios):
+    """Whether the five library scenarios alone tell every pair of readings apart."""
+    rows = {tuple(simulator.simulate(r, s) for s in scenarios) for r in readings_}
+    return len(rows) == len(readings_)
+
+
+def recheck(store_path=STORE):
+    """Recompute the criteria from the stored raw replies (the latest successful one per request)."""
+    specs = load_json(ROOT / "data" / "requests.json")["requests"]
+    scenarios = load_json(ROOT / "data" / "scenarios.json")["scenarios"]
+    store = load_json(store_path)["recordings"]
+    print(f"Rechecking the latest successful recording of each request in {store_path.relative_to(ROOT)}; "
+          "no model call.\n")
+    for spec in specs:
+        ok = [r for r in store if r["request_id"] == spec["id"] and not r.get("error")]
+        if not ok:
+            print(f"  {spec['id']}: no successful recording")
+            continue
+        record = ok[-1]
+        generated = readings.interpret(spec["text"], record["raw_text"], {"kind": "recorded"}, record["context"])
+        problems, count = as_sent(record["raw_text"])
+        print(f"  {spec['id']} ({record['time'][:16]}, {count} reading(s) sent): {verdict(criteria(spec, generated, scenarios))}")
+        if problems:
+            print(f"      the checker had to fix: {'; '.join(problems)}")
+        if len(generated.readings) > 1:
+            print(f"      the five library scenarios tell them apart: "
+                  f"{'yes' if separated_by_library(generated.readings, scenarios) else 'no'}")
+        print(describe(generated))
+    return 0
 
 
 def describe(generated):
@@ -124,8 +176,8 @@ def record(key, only, version, pause, store_path=STORE):
                          finish_reason=meta.get("finish_reason"), raw_text=text)
             generated = readings.interpret(spec["text"], text, {"kind": "live"}, context)
             entry["check"] = criteria(spec, generated, scenarios)
-            verdict = ", ".join(f"{name} {'pass' if ok else 'FAIL'}" for name, ok in entry["check"].items())
-            print(f"  {spec['id']}: {verdict} ({entry['latency_s']} s)\n{describe(generated)}")
+            entry["as_sent_problems"] = as_sent(text)[0]
+            print(f"  {spec['id']}: {verdict(entry['check'])} ({entry['latency_s']} s)\n{describe(generated)}")
         store["recordings"].append(entry)
         store_path.write_text(json.dumps(store, indent=2, ensure_ascii=False) + "\n", encoding="utf-8")
     print(f"Saved to {store_path.relative_to(ROOT)}.")
@@ -141,7 +193,11 @@ def main():
     parser.add_argument("--prompt", default=readings.PROMPT_VERSION, help="prompt version, for example v1")
     parser.add_argument("--pause", type=float, default=4.0, help="seconds between calls (free-tier rate limits)")
     parser.add_argument("--out", help="write to this file instead (the app only replays data/recorded_readings.json)")
+    parser.add_argument("--recheck", action="store_true",
+                        help="recheck the stored replies against the criteria; needs no key and calls no model")
     args = parser.parse_args()
+    if args.recheck:
+        return recheck(ROOT / args.out if args.out else STORE)
     key = readings.api_key()
     if not key:
         print("No GEMINI_API_KEY in the environment or in .env (see .env.example).")
