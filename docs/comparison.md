@@ -34,3 +34,34 @@ Random is the mean of 20 seeds. Cells: deviations exposed / shared deviations ex
 | E | S5* (saved rule wrong) | S1, S2*, S4* (2 rules left) | S5*, S2*, S4* (saved rule correct) | S4*, S5*, S1 (saved rule wrong) |
 
 `*` marks a question that exposed a deviation.
+
+## Contrasting preferences (fixed on 2026-11-09, before this section was first run)
+
+The same sentences and readings, answered by people who want something else (`data/opposite_preferences.json`). Nothing in the checker was changed after seeing these results.
+
+| Request | Readings | Deviations (scenario: readings that deviate) | Shared by all readings |
+|---|---|---|---|
+| C, C-arrival-only (a person who wants the light to come on only when they arrive after dark, and to go off when they leave) | 1 (gemini-3.5-flash) | S4: R1 | S4 |
+| D, D-left-on (a person who wants the light on whenever they are home after dark, and left on when they go out) | 2 (gemini-3.5-flash) | S4: R1 | none |
+| E, E-whenever-dark (a person who wants the light on whenever it is dark, home or not, and never switched off by the rule) | 2 (gemini-3.5-flash) | S2: R1, R2; S5: R2 | S2 |
+
+### Totals over 3 targets (4 deviations, 2 shared)
+
+Random is the mean of 20 seeds. Cells: deviations exposed / shared deviations exposed / correct saved rules / questions asked.
+
+| Strategy | 1 question | 2 questions | 3 questions |
+|---|---|---|---|
+| divergence | 2/4 · 0/2 · 1/3 · 2 | 2/4 · 0/2 · 1/3 · 2 | 2/4 · 0/2 · 1/3 · 2 |
+| boundary | 0/4 · 0/2 · 0/3 · 3 | 1/4 · 1/2 · 0/3 · 6 | 3/4 · 2/2 · 2/3 · 9 |
+| combined | 2/4 · 1/2 · 1/3 · 3 | 3/4 · 1/2 · 2/3 · 5 | 3/4 · 1/2 · 2/3 · 5 |
+| random | 0.9/4 · 0.5/2 · 0.4/3 · 3 | 1.6/4 · 0.9/2 · 0.8/3 · 6 | 2.5/4 · 1.3/2 · 1.6/3 · 9 |
+
+### Questions asked with a budget of three (random: seed 0)
+
+| Request | divergence | boundary | combined | random |
+|---|---|---|---|---|
+| C, C-arrival-only | none (saved rule wrong) | S1, S2, S4* (saved rule correct) | S1, S4* (saved rule correct) | S4*, S5, S1 (saved rule correct) |
+| D, D-left-on | S4* (saved rule correct) | S1, S2, S4* (saved rule correct) | S4* (saved rule correct) | S4*, S5, S1 (saved rule correct) |
+| E, E-whenever-dark | S5* (saved rule wrong) | S1, S2*, S4 (2 rules left) | S5*, S4 (saved rule wrong) | S4, S5*, S1 (saved rule wrong) |
+
+`*` marks a question that exposed a deviation.
