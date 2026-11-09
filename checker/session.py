@@ -13,9 +13,13 @@ from . import repair, restate, selector, simulator
 ANSWERS = {"yes": "Yes", "no": "No", "not_sure": "Not sure"}
 WHY = {
     "differ": "Your words fit {n} rules, and they act differently here.",
-    "flipped_trigger:dark": "Rules worded like yours often miss the moment it gets dark while you are already home.",
-    "flipped_trigger:home": "Rules worded like yours often miss the moment you arrive after it is already dark.",
-    "missing_reversal": "Rules worded like yours often turn the light on but never off.",
+    # A probe is asked only where every remaining rule leaves the light as it was (selector.probes),
+    # so these sentences describe the rules on screen, not a guess about the wording.
+    "flipped_trigger:dark": "None of the rules I built turns the light on at this moment: "
+                            "it gets dark while you are already home.",
+    "flipped_trigger:home": "None of the rules I built turns the light on at this moment: "
+                            "you arrive after it is already dark.",
+    "missing_reversal": "None of the rules I built turns the light off when you leave.",
 }
 ERRORS = {
     "no_source": "I have no saved model output for this request and no model is connected, so I have not created a rule. "

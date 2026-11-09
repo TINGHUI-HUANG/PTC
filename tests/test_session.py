@@ -37,7 +37,7 @@ class Flow(unittest.TestCase):
         s.answer("yes")
         card = s.view()["card"]
         self.assertEqual((s.pending["scenario"]["id"], card["number"]), ("S4", 2))
-        self.assertIn("never off", card["why"])
+        self.assertEqual(card["why"], "None of the rules I built turns the light off when you leave.")
         s.answer("yes")
         self.assertEqual(s.view()["card"], {"kind": "repair", "rule": OFF_RULE, "options": [
             ["add", "Add this rule"], ["dont_add", "Don't add"], ["edit", "Edit my request"]]})
@@ -65,7 +65,8 @@ class Flow(unittest.TestCase):
     def test_clear_request_costs_one_probe_question(self):
         s, _ = start(A)
         self.assertEqual((s.pending["scenario"]["id"], s.pending["reason"]), ("S1", "flipped_trigger"))
-        self.assertIn("already home", s.view()["card"]["why"])
+        self.assertEqual(s.view()["card"]["why"], "None of the rules I built turns the light on at this moment: "
+                                                  "it gets dark while you are already home.")
         s.answer("no")
         self.assertEqual(s.stage, "confirm")
 
