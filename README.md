@@ -1,6 +1,6 @@
 # Pre-save timing check for one-sentence home automations
 
-*README prose: 1434 words (code, commands and file names not counted).*
+*README prose: 1432 words (code, commands and file names not counted).*
 Intelligent Interactive Systems, Assignment 2 (project Phase 2) · student 3189041 · submitted release `v1.1-a2`.
 
 A person types one sentence, such as "Turn on the hallway light when I'm home after dark". Before saving, the
@@ -69,7 +69,7 @@ made the change and ran the check; "I" marks my own decisions and checks.
 | Review and fixes (7–9 Nov) | At my request OpenAI Codex reviewed the project and reproduced four faults, and I decided to act on all four: Back could revive an answer I had changed (answers now carry versions and the latest wins); an "off" rule that can never fire passed as a reversal (checks now use what a rule can do); C1 and C3 were judged after the checker had repaired the reply (now judged as sent); "Try again" failed after a reload (a retry keeps its card). | The review's sequence as a test; 600 random Back and Revisit walks fail 38 times on the old code, never now; `--recheck`; I tested the fixed code myself | [`60f9cb0`](https://github.com/TINGHUI-HUANG/PTC/commit/60f9cb0) [`257dd7d`](https://github.com/TINGHUI-HUANG/PTC/commit/257dd7d) [`d999de9`](https://github.com/TINGHUI-HUANG/PTC/commit/d999de9) [`3a8d4aa`](https://github.com/TINGHUI-HUANG/PTC/commit/3a8d4aa) |
 | Contrasting preferences | I asked for three people who want something else from C, D and E, fixed before the run. The combined source exposed 3 of 4 deviations, missing arrival after dark once a plain sunset rule is kept. Nothing was tuned in response. | `docs/comparison.md` | [`6c2748a`](https://github.com/TINGHUI-HUANG/PTC/commit/6c2748a) [`db20efb`](https://github.com/TINGHUI-HUANG/PTC/commit/db20efb) |
 | Figures | Diagram and storyboards come from code and real screens (`tools/`). Frames showed Yes and Save pre-focused (a default answer) and a decline claiming rules were drafted; both fixed. | Every frame looked at | [`f6f5197`](https://github.com/TINGHUI-HUANG/PTC/commit/f6f5197) [`b3819c3`](https://github.com/TINGHUI-HUANG/PTC/commit/b3819c3) [`6ce6501`](https://github.com/TINGHUI-HUANG/PTC/commit/6ce6501) [`9acc3e2`](https://github.com/TINGHUI-HUANG/PTC/commit/9acc3e2) [`a8f6d60`](https://github.com/TINGHUI-HUANG/PTC/commit/a8f6d60) |
-| Assessment round (11–12 Nov) | At my request Claude Code assessed the work against the brief and rubric. I corrected who wrote the 2 Nov changes (`ddfa6bf`) and chose to act on its findings: storyboards now start at the Describe step, state the goal, label who acts and show Back and Revisit; the diagram's footnotes became short labels. | Every frame looked at; 50 tests pass | this release |
+| Assessment round (11–12 Nov) | At my request Claude Code assessed the work against the brief and rubric. I corrected who wrote the 2 Nov changes (`ddfa6bf`) and chose to act on its findings: storyboards now start at the Describe step, state the goal, label who acts and show Back and Revisit; the diagram's footnotes became short labels. | Every frame looked at; 50 tests pass | [`526cb56`](https://github.com/TINGHUI-HUANG/PTC/commit/526cb56) |
 
 ## AI assistance
 
