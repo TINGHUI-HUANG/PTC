@@ -419,7 +419,7 @@ function render() {
   const c = view.card;
   let el;
   if (c.kind === "question") {
-    el = card("question", `<div class="card-kicker">Step 02 / Check together · Question ${c.number} of up to ${c.budget}</div><h2>Imagine this moment.</h2>
+    el = card("question", `<div class="card-kicker">Step 02 / Check · Question ${c.number} of up to ${c.budget}</div><h2>Imagine this moment.</h2>
       ${sceneVisual(c)}
       <div class="scene">${sceneFact("Time", c.time, clockIcon(c.time))}${sceneFact("Before the event", c.start.home ? "You are home" : "You are away", ruleIcon(c.start.home ? "home" : "away"))}${sceneFact("Light before", c.start.light, ruleIcon("light-" + c.start.light))}${sceneFact("Event", ({arrive:"You arrive home",leave:"You leave home",sunset:"It gets dark"})[c.event], ruleIcon(c.event))}</div>
       <div class="situation">${esc(c.situation)}</div><div class="question">${esc(c.question)}</div>

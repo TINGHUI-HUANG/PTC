@@ -2,14 +2,14 @@
 
     py -3.11 tools/make_diagram.py
 
-Boxes, arrows and short labels only. Solid boxes are implemented, dashed ones recorded or
+Boxes, arrows and short labels only; the three reply sources are numbered in the order they are tried. Solid boxes are implemented, dashed ones recorded or
 simulated, dotted ones planned. Convert to PNG with: node tools/capture.mjs --diagram
 """
 from pathlib import Path
 from xml.sax.saxutils import escape
 
 ROOT = Path(__file__).resolve().parent.parent
-W, H = 940, 1050
+W, H, LEFT = 940, 1014, 16      # LEFT: room for the rotated label beside the person column
 P, C, D = (20, 220), (320, 320), (700, 220)          # x and width of the three columns
 STYLE = {
     "impl": 'fill="#e7f0ff" stroke="#2f5fb3" stroke-width="1.6"',
@@ -76,9 +76,9 @@ def build():
     box(C, 690, 66, "8  Save once", "once per session, even on a retried click")
 
     # Model and data column
-    box(D, 60, 66, "Gemini (LLM)", "1–3 readings as JSON", note="Implemented · live, needs a key", badge="AI")
-    box(D, 136, 48, "Recorded replies", status="sim", note="Recorded · replayed, no key")
-    box(D, 192, 48, "Lab 3 hand-written", status="sim", note="Simulated · requests A and B")
+    box(D, 60, 66, "Gemini (LLM)", "1–3 readings as JSON", note="Implemented · 2nd: live, needs a key", badge="AI")
+    box(D, 136, 48, "Recorded replies", status="sim", note="Recorded · 1st: replayed, no key")
+    box(D, 192, 48, "Lab 3 hand-written", status="sim", note="Simulated · last: requests A, B")
     box(D, 252, 66, "Scenario library S1–S5", "one moment each; sunset 18:00")
     box(D, 600, 66, "Session log (JSONL)", "answers, sources, outcomes", note="Implemented · who clicked")
     box(D, 690, 50, "Saved rules (local JSON)")
@@ -139,15 +139,11 @@ def build():
     out.append(f'<rect x="690" y="{y}" width="30" height="18" rx="9" fill="#6f42c1"/>')
     text(705, y + 13, "AI", "badge", "middle")
     text(728, y + 14, "model inference")
-    text(20, 1020, "Steps 4–7 implement the initiative rule: ask while readings differ or a bug class applies; "
-                   "then propose and wait.", "s")
-    text(20, 1040, "Reply source, in order: recorded reply → live Gemini call (needs a key) → Lab 3 hand-written "
-                   "(A, B); a failed live call is reported, never replaced.", "s")
 
 
 def main():
     build()
-    svg = f"""<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 {W} {H}" width="{W}" height="{H}" role="img"
+    svg = f"""<svg xmlns="http://www.w3.org/2000/svg" viewBox="{-LEFT} 0 {W + LEFT} {H}" width="{W + LEFT}" height="{H}" role="img"
   aria-label="System diagram of the pre-save timing check">
 <defs>
   <marker id="head" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
@@ -163,7 +159,7 @@ def main():
     .arrow {{ stroke: #444c56; stroke-width: 1.5; fill: none; }}
   </style>
 </defs>
-<rect width="{W}" height="{H}" fill="#ffffff"/>
+<rect x="{-LEFT}" width="{W + LEFT}" height="{H}" fill="#ffffff"/>
 {chr(10).join(out)}
 </svg>
 """

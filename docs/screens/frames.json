@@ -1,0 +1,98 @@
+{
+ "s1_1.png": {
+  "height": 788,
+  "elide": null
+ },
+ "s1_2.png": {
+  "height": 829,
+  "elide": null
+ },
+ "s1_3.png": {
+  "height": 829,
+  "elide": null
+ },
+ "s1_4.png": {
+  "height": 722,
+  "elide": null
+ },
+ "s1_5.png": {
+  "height": 1412,
+  "elide": {
+   "from": 325,
+   "to": 907,
+   "rules": 3,
+   "note": "more When / Only if / Then rows left out here"
+  }
+ },
+ "s1_6.png": {
+  "height": 398,
+  "elide": null
+ },
+ "s2_1.png": {
+  "height": 804,
+  "elide": null
+ },
+ "s2_2.png": {
+  "height": 824,
+  "elide": null
+ },
+ "s2_3.png": {
+  "height": 1156,
+  "elide": {
+   "from": 325,
+   "to": 682,
+   "rules": 2,
+   "note": "more When / Only if / Then rows left out here"
+  }
+ },
+ "s2_4.png": {
+  "height": 695,
+  "elide": null
+ },
+ "s2_5.png": {
+  "height": 1412,
+  "elide": {
+   "from": 325,
+   "to": 907,
+   "rules": 3,
+   "note": "more When / Only if / Then rows left out here"
+  }
+ },
+ "s2_6.png": {
+  "height": 1020,
+  "elide": {
+   "from": 378,
+   "to": 733,
+   "note": "scene left out here: the moment of frame 1"
+  }
+ },
+ "s3_1.png": {
+  "height": 518,
+  "elide": null
+ },
+ "s3_2.png": {
+  "height": 849,
+  "elide": null
+ },
+ "s3_3.png": {
+  "height": 477,
+  "elide": null
+ },
+ "s3_4.png": {
+  "height": 829,
+  "elide": null
+ },
+ "s3_5.png": {
+  "height": 1134,
+  "elide": {
+   "from": 325,
+   "to": 682,
+   "rules": 2,
+   "note": "more When / Only if / Then rows left out here"
+  }
+ },
+ "s3_6.png": {
+  "height": 388,
+  "elide": null
+ }
+}
