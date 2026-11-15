@@ -1,7 +1,7 @@
 # Pre-save timing check for one-sentence home automations
 
-*README prose: 1432 words (code, commands and file names not counted).*
-Intelligent Interactive Systems, Assignment 2 (project Phase 2) · student 3189041 · submitted release `v1.1-a2`.
+*README prose: 1491 words (code, commands and file names not counted).*
+Intelligent Interactive Systems, Assignment 2 (project Phase 2) · student 3189041 · submitted release `v1.2-a2`.
 
 A person types one sentence, such as "Turn on the hallway light when I'm home after dark". Before saving, the
 system asks up to three yes/no questions about concrete moments where Gemini's readings of the sentence differ or
@@ -95,7 +95,11 @@ What I decided or checked myself:
   said Yes to the light coming on at 18:00 although my sentence only mentions arriving, and added the proposed
   sunset rule. My door-lock request was declined with no rule created.
 - After the Codex review I decided what to act on: the faults and the report's wording, plus the contrasting
-  preferences. 
+  preferences.
+- I checked the figures the report cites against the papers: 18 of 42 participants in the second study of
+  Huang and Cakmak; drops of 21.8 and 22.4 points in Brackenbury et al.; 107 participants in Zhao et al.,
+  where the questions interface helped on some complex tasks. I narrowed the report's wording on the last
+  to "some complex tasks".
 
 ## Additional files
 
