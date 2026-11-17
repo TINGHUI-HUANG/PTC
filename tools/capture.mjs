@@ -200,12 +200,25 @@ async function story(b, name, steps, meta) {
         elide = { from: Math.round(scene.top - 6 - top), to: Math.round(facts.bottom + 6 - top),
                   note: "scene left out here: the moment of frame 1" };
       }
-      return { clip: { x: left + scrollX, y: top + scrollY, width: right - left, height: bottom - top }, elide };
+      // Where a review card speaks about leaving home: the answer line, the "never" note and the last rule.
+      // tools/make_storyboards.py outlines and magnifies these on storyboard 2.
+      const marks = {};
+      if (confirm) {
+        const box = (e) => { const r = e.getBoundingClientRect();
+          return { x: Math.round(r.left - left), y: Math.round(r.top - top), w: Math.round(r.width), h: Math.round(r.height) }; };
+        const leave = [...confirm.querySelectorAll("ul.confirmed li")].find((e) => e.textContent.includes("leave at 23:30"));
+        const never = confirm.querySelector(".never");
+        const rules = confirm.querySelectorAll(".rule > div");
+        if (leave) marks.leave = box(leave);
+        if (never) marks.never = box(never);
+        if (rules.length) marks.lastrule = box(rules[rules.length - 1]);
+      }
+      return { clip: { x: left + scrollX, y: top + scrollY, width: right - left, height: bottom - top }, elide, marks };
     })()`);
     if (!found) throw new Error(`${name} step ${n + 1}: none of ${step.frame.join(", ")} is on screen`);
     const file = `${name}_${n + 1}.png`;
     await b.shot(join(ROOT, "docs", "screens", file), found.clip);
-    meta[file] = { height: Math.round(found.clip.height), elide: found.elide };
+    meta[file] = { height: Math.round(found.clip.height), elide: found.elide, marks: found.marks };
   }
 }
 
