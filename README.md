@@ -1,6 +1,6 @@
 # Pre-save timing check for one-sentence home automations
 
-*README prose: 1491 words (code, commands and file names not counted).*
+*README prose: 1520 words (code, commands and file names not counted).*
 Intelligent Interactive Systems, Assignment 2 (project Phase 2) · student 3189041 · submitted release `v1.2-a2`.
 
 A person types one sentence, such as "Turn on the hallway light when I'm home after dark". Before saving, the
@@ -100,6 +100,8 @@ What I decided or checked myself:
   Huang and Cakmak; drops of 21.8 and 22.4 points in Brackenbury et al.; 107 participants in Zhao et al.,
   where the questions interface helped on some complex tasks. I narrowed the report's wording on the last
   to "some complex tasks".
+- I then rewrote the report in my own words, starting from Claude's draft. Claude checked my version, and I
+  corrected the lecture terms and control names it pointed out.
 
 ## Additional files
 
